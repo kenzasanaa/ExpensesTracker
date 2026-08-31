@@ -51,5 +51,19 @@ export const transactionSchema = z.object({
 export type Transaction = z.infer<typeof transactionSchema>;
 
 // 4. NOW derive the form schema (after transactionSchema is declared)
-export const transactionFormSchema = transactionSchema.omit({ id: true });
+//export const transactionFormSchema = transactionSchema.omit({ id: true });
+export const transactionFormSchema = transactionSchema
+  .omit({ id: true })
+  .refine(
+    (data) => {
+      if (data.category === 'Extra Income' && data.type !== 'income') {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'Extra Income can only be an Income transaction',
+      path: ['category'],
+    }
+  );
 export type TransactionFormData = z.infer<typeof transactionFormSchema>;
