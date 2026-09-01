@@ -1,22 +1,20 @@
 import { TransactionForm } from '@/components/ui/forms/TransactionForm';
-import { Transaction, TransactionFormData } from '@/types/transaction';
+import { TransactionFormData, Transaction } from '@/types/transaction';
 
 type EditPageProps = {
   existingTransaction: Transaction;
 };
 
 export default function EditTransactionPage({ existingTransaction }: EditPageProps) {
+  const { id, ...formDefaults } = existingTransaction;
+
   function handleFormSubmit(data: TransactionFormData) {
     const updated: Transaction = {
       ...data,
-      id: existingTransaction.id,
+      id, // ← use the extracted id here instead of existingTransaction.id
     };
     console.log(updated);
   }
-
-const formDefaults = Object.fromEntries(
-  Object.entries(existingTransaction).filter(([k]) => k !== 'id')
-) as Omit<Transaction, 'id'>;
 
   return (
     <TransactionForm
