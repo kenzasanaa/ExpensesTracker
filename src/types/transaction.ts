@@ -12,7 +12,7 @@ export const CATEGORIES = [
   'Others',
 ] as const;
 
-export const PAYMENT_MODES = ['Cash','Credit Card'] as const;
+export const PAYMENT_MODES = ['Cash','Credit Card', 'Bank Transfer'] as const;
 
 // 2. Build the Zod schema FIRST
 export const transactionSchema = z.object({
