@@ -1,77 +1,65 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Transaction, TransactionFormData } from '@/types/transaction';
+import { useLocalStorage } from '@/hook/useLocalStorage'
+import { Transaction } from '@/types/transaction'
 
-const STORAGE_KEY = 'expense-tracker-transactions';
+const STORAGE_KEY = 'expenses-tracker-transactions'
 
-// Optional: one demo transaction so the dashboard isn't completely blank on first visit
-// Remove this if you want a fully empty start
-const DEMO_DATA: Transaction[] = [
+const getInitialTransactions = (): Transaction[] => [
   {
-    id: crypto.randomUUID(),
+    id: 'demo-1',
     type: 'income',
-    amount: 5000,
-    date: new Date(),
-    time: '09:00',
-    description: 'Salary',
-    category: 'Others',
-    paymentMode: 'Bank Transfer',
+    amount: 4000,
+    category: 'Extra Income',
+    date: new Date('2017-06-01'),
+    paymentMode: 'Debit Card',
+    description: 'Income from Salary',
   },
-];
-
-function loadTransactions(): Transaction[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return DEMO_DATA; // First visit → show demo, or return [] for empty start
-    const parsed = JSON.parse(raw);
-    // Dates come back as strings from JSON, convert them back to Date objects
-    return parsed.map((t: Transaction) => ({
-      ...t,
-      date: new Date(t.date),
-    }));
-  } catch {
-    return DEMO_DATA;
-  }
-}
-
-function saveTransactions(transactions: Transaction[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
-}
+  {
+    id: 'demo-2',
+    type: 'expense',
+    amount: 45,
+    category: 'Food',
+    date: new Date('2017-06-02'),
+    paymentMode: 'Cash',
+    description: 'Groceries',
+  },
+]
 
 export function useTransactions() {
-  const [transactions, setTransactions] = useState<Transaction[]>(loadTransactions);
+  const [transactions, setTransactions, removeTransactions] = useLocalStorage<Transaction[]>(
+    STORAGE_KEY,
+    getInitialTransactions,
+    {
+      // Replace (t: any) with this:
+      deserializer: (value) => {
+        type SerializedTransaction = Omit<Transaction, 'date'> & { date: string }
+        const parsed = JSON.parse(value) as SerializedTransaction[]
+        return parsed.map((t) => ({
+          ...t,
+          date: new Date(t.date),
+        }))
+      },
+    }
+  )
 
-  // Auto-save to localStorage whenever transactions change
-  useEffect(() => {
-    saveTransactions(transactions);
-  }, [transactions]);
+  const addTransaction = (transaction: Transaction) => {
+    setTransactions((prev) => [...prev, transaction])
+  }
 
-  const addTransaction = useCallback((data: TransactionFormData) => {
-    const newTransaction: Transaction = {
-      ...data,
-      id: crypto.randomUUID(),
-    };
-    setTransactions((prev) => [...prev, newTransaction]);
-  }, []);
+  const deleteTransaction = (id: string) => {
+    setTransactions((prev) => prev.filter((t) => t.id !== id))
+  }
 
-  const updateTransaction = useCallback((id: string, data: TransactionFormData) => {
+  const updateTransaction = (id: string, updates: Partial<Transaction>) => {
     setTransactions((prev) =>
-      prev.map((t) => (t.id === id ? { ...data, id } : t))
-    );
-  }, []);
-
-  const deleteTransaction = useCallback((id: string) => {
-    setTransactions((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  const clearAll = useCallback(() => {
-    setTransactions([]);
-  }, []);
+      prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
+    )
+  }
 
   return {
     transactions,
     addTransaction,
-    updateTransaction,
     deleteTransaction,
-    clearAll,
-  };
+    updateTransaction,
+    removeTransactions,
+  }
 }

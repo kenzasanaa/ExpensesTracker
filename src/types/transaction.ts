@@ -2,9 +2,11 @@ import { z } from 'zod';
 
 // 1. Define reusable constants
 export const CATEGORIES = [
+  'Rent',
   'Food',
   'Transportation',
   'Grocories',
+  'Bills',
   'Clothing',
   'Shopping',
   'Education',
@@ -12,7 +14,7 @@ export const CATEGORIES = [
   'Others',
 ] as const;
 
-export const PAYMENT_MODES = ['Cash','Credit Card', 'Bank Transfer'] as const;
+export const PAYMENT_MODES = ['Cash','Credit Card', 'Debit Card' ,'Bank Transfer'] as const;
 
 // 2. Build the Zod schema FIRST
 export const transactionSchema = z.object({
