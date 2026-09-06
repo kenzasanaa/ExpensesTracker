@@ -5,7 +5,7 @@ import { addDays, startOfDay } from 'date-fns';
 const EXPENSE_CATEGORIES = [
   'Food',
   'Transportation',
-  'Grocories',
+  'Groceries',
   'Clothing',
   'Shopping',
   'Education',

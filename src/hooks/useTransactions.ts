@@ -24,7 +24,10 @@ const getInitialTransactions = (): Transaction[] => [
   },
 ]
 
+
+
 export function useTransactions() {
+  
   const [transactions, setTransactions, removeTransactions] = useLocalStorage<Transaction[]>(
     STORAGE_KEY,
     getInitialTransactions,
@@ -41,9 +44,15 @@ export function useTransactions() {
     }
   )
 
-  const addTransaction = (transaction: Transaction) => {
-    setTransactions((prev) => [...prev, transaction])
-  }
+// src/hooks/useTransactions.ts
+
+const addTransaction = (transaction: Omit<Transaction, 'id'> & { id?: string }) => {
+  const newTx: Transaction = {
+    ...transaction,
+    id: transaction.id || crypto.randomUUID(),
+  };
+  setTransactions((prev) => [newTx, ...prev]);
+};
 
   const deleteTransaction = (id: string) => {
     setTransactions((prev) => prev.filter((t) => t.id !== id))

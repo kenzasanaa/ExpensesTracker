@@ -5,7 +5,7 @@ export const CATEGORIES = [
   'Rent',
   'Food',
   'Transportation',
-  'Grocories',
+  'Groceries',
   'Bills',
   'Clothing',
   'Shopping',
