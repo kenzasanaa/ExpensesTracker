@@ -2,7 +2,7 @@
 
 A modern, serverless personal finance application built to help users track, analyze, and manage their income and expenses with absolute privacy. Every transaction, custom filter, and profile modification is saved and processed directly on the client's machine, ensuring instantaneous loading speeds and complete data privacy.
 
-**Key Features **⚙️
+**Key Features** ⚙️
 
 Dynamic Financial Dashboard: Features aggregated metric cards detailing Net Balance, Total Income, Total Expenses, and transaction volume. Integrates responsive Recharts visualizations including a categorical expenditure doughnut chart (with custom legends) and a chronological account balance timeline.
 Interactive Date Selector: Acts as a master date filter across the entire application. Features side-by-side calendars and quick-preset shortcuts. Adjusting this date instantly recalculates both your dashboard metrics and your transaction ledger rows.
