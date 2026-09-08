@@ -14,6 +14,23 @@ export const CATEGORIES = [
   'Others',
 ] as const;
 
+
+export const filterSchema = z.object({
+  search: z.string().default(''),
+  categories: z.array(z.string()).default([]),
+  types: z.array(z.enum(['income', 'expense'])).default(['income', 'expense']),
+  paymentModes: z.array(z.string()).default([]),
+  minAmount: z.preprocess(
+    (val) => (val === '' ? undefined : Number(val)),
+    z.number().positive().optional()
+  ),
+  maxAmount: z.preprocess(
+    (val) => (val === '' ? undefined : Number(val)),
+    z.number().positive().optional()
+  ),
+});
+
+
 export const PAYMENT_MODES = ['Cash','Credit Card', 'Debit Card' ,'Bank Transfer'] as const;
 
 // 2. Build the Zod schema FIRST
@@ -41,6 +58,7 @@ export const transactionSchema = z.object({
 
   description: z
     .string()
+    
     .min(2, 'Description must be at least 2 characters')
     .max(100, 'Description is too long'),
 
@@ -69,3 +87,4 @@ export const transactionFormSchema = transactionSchema
     }
   );
 export type TransactionFormData = z.infer<typeof transactionFormSchema>;
+export type FilterState = z.infer<typeof filterSchema>;

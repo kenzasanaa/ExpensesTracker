@@ -3,8 +3,8 @@ import { DateRangeContext } from './DateRangeContext';
 
 export function DateRangeProvider({ children }: { children: ReactNode }) {
   const [dateRange, setDateRange] = useState({
-    from: new Date(2017, 5, 1),
-    to: new Date(2017, 10, 30),
+    from: new Date(2026, 5, 1),
+    to: new Date(2027, 10, 30),
   });
 
   return (

@@ -3,6 +3,7 @@ import { DateRangeProvider } from '@/context/DateRangeProvider';
 import { Layout } from '@/components/layout/Layout';
 import Dashboard from '@/pages/Dashboard';
 import Transactions from '@/pages/Transactions';
+import About from '@/pages/About';
 import './App.css';
 
 
@@ -14,6 +15,7 @@ function App() {
           <Route element={<Layout />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/about" element={<About />} />
           </Route>
         </Routes>
       </BrowserRouter>

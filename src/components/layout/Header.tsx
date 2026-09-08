@@ -1,8 +1,7 @@
 import { useLocation } from 'react-router-dom';
-import { Menu, Calendar } from 'lucide-react';
-import { format } from 'date-fns';
+import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useDateRange } from '@/hooks/useDateRange';
+import { DateRangePicker } from './DateRangePicker'; // Adjust path if needed
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -15,8 +14,6 @@ const pageTitles: Record<string, string> = {
 
 export function Header({ onMenuClick }: HeaderProps) {
   const location = useLocation();
-  const { dateRange } = useDateRange();
-
   const title = pageTitles[location.pathname] || 'Expense Tracker';
 
   return (
@@ -34,15 +31,8 @@ export function Header({ onMenuClick }: HeaderProps) {
         <h1 className="text-lg font-semibold text-slate-900">{title}</h1>
       </div>
 
-      <Button variant="outline" className="gap-2 text-sm font-normal h-9">
-        <Calendar className="h-4 w-4 text-slate-500" />
-        <span className="hidden sm:inline text-slate-600">
-          {format(dateRange.from, 'MM/dd/yyyy')} - {format(dateRange.to, 'MM/dd/yyyy')}
-        </span>
-        <span className="sm:hidden text-slate-600">
-          {format(dateRange.from, 'MM/dd')} - {format(dateRange.to, 'MM/dd')}
-        </span>
-      </Button>
+      {/* Renders the interactive popover calendar picker */}
+      <DateRangePicker />
     </header>
   );
 }
