@@ -1,75 +1,20 @@
-# React + TypeScript + Vite
+**Dynamic Financial Dashboard 💰**
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, serverless personal finance application built to help users track, analyze, and manage their income and expenses with absolute privacy. Every transaction, custom filter, and profile modification is saved and processed directly on the client's machine, ensuring instantaneous loading speeds and complete data privacy.
 
-Currently, two official plugins are available:
+**Key Features** ⚙️
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
-
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
+Dynamic Financial Dashboard: Features aggregated metric cards detailing Net Balance, Total Income, Total Expenses, and transaction volume. Integrates responsive Recharts visualizations including a categorical expenditure doughnut chart (with custom legends) and a chronological account balance timeline.
+Interactive Date Selector: Acts as a master date filter across the entire application. Features side-by-side calendars and quick-preset shortcuts. Adjusting this date instantly recalculates both your dashboard metrics and your transaction ledger rows.
+Advanced Transaction Ledger: Displays transaction rows with color-coded feedback (emerald for income, rose for expenses). Supports instant text queries, pagination, and multi-select rows for bulk deletions.
+Flexible Side-Panel Filters: Drill down into your finances by searching description queries, sorting categories, payment modes, cashflow types, or custom price ranges.
+Dual-Mode Transaction Dialog: Uses a single form dialog component to handle both creating new entries and editing existing ones, keeping the UI codebase highly modular and maintainable].
+Serverless Local Persistence: Uses a custom useLocalStorage React hook with serialized and deserialized type-safeguards to persist transaction logs and your custom user profile. State modifications trigger global window events to keep all components synced in real-time.
+ 
+**Tech Stack 🧩**
+Frontend Library: React 18
+Language: TypeScript (configured with strict compilation rules)
+Styling & Components: Tailwind CSS, Shadcn UI, Radix UI Primitives, Lucide Icons
+Forms & Validation: React Hook Form, Zod Schema Validation
+Charts: Recharts
+State Management: Custom React Context (for global date filters) & Custom hooks (for state persistence)
