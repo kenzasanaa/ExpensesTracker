@@ -13,7 +13,6 @@ INSERT INTO payment_modes (name) VALUES
 INSERT INTO users (email, password_hash, name) VALUES
     ('demo@expensetracker.dev', '$2b$10$VodTjOs4k4hle/ncOBnNMuC.QeaHBTYjT2KscW/.FE8p2bZLL3EcG', 'Demo User');
 
--- ~150 realistic transactions for the demo user, spread over the last 90 days.
 INSERT INTO transactions (user_id, category_id, payment_mode_id, type, amount, txn_date, txn_time, description)
 SELECT
     u.id,
