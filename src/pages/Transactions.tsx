@@ -1,35 +1,21 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useTransactions } from '@/hooks/useTransactions';
-import { useDateRange } from '@/hooks/useDateRange';
+import { useLookups } from '@/hooks/useLookups';
 import { AddTransactionDialog } from '@/components/transaction/AddTransactionDialog';
-import { CATEGORIES, PAYMENT_MODES, FilterState } from '@/types/transaction';
+import type { FilterState } from '@/types/transaction';
 import { formatCurrency } from '@/lib/utils';
-
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
-import { Trash2, Edit } from 'lucide-react';
+import { Trash2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
+
+const PAGE_SIZE = 10;
 
 export default function Transactions() {
-  const { transactions, deleteTransaction } = useTransactions();
-  const { dateRange } = useDateRange();
-
-  // Selection states
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  
-  // Controlled Edit States
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-
-  // Filter States
+  // UI filter state (names, not ids — ids are resolved in the hook)
   const [filters, setFilters] = useState<FilterState>({
     search: '',
     categories: [],
@@ -38,117 +24,80 @@ export default function Transactions() {
     minAmount: undefined,
     maxAmount: undefined,
   });
+  const [page, setPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Dynamic Filtering Logic
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter((t) => {
-      // Date Filter
-      const txDate = new Date(t.date);
-      if (dateRange.from && txDate < dateRange.from) return false;
-      if (dateRange.to && txDate > dateRange.to) return false;
+  const { categories, paymentModes } = useLookups();
 
-      // Text Search
-      if (filters.search) {
-        const query = filters.search.toLowerCase();
-        const matchesDesc = t.description.toLowerCase().includes(query);
-        const matchesCat = t.category.toLowerCase().includes(query);
-        if (!matchesDesc && !matchesCat) return false;
-      }
+  // THE MIGRATION: no filtering happens in this file anymore.
+  // These are query parameters — PostgreSQL applies them and paginates.
+  const { transactions, total, loading, deleteTransactions } = useTransactions({
+    page,
+    pageSize: PAGE_SIZE,
+    types: filters.types,
+    categories: filters.categories,
+    paymentModes: filters.paymentModes,
+    search: filters.search || undefined,
+    min: filters.minAmount?.toString(),
+    max: filters.maxAmount?.toString(),
+  });
 
-      // Cashflow Type (Income/Expense)
-      if (filters.types.length > 0 && !filters.types.includes(t.type)) return false;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-      // Selected Categories
-      if (filters.categories.length > 0 && !filters.categories.includes(t.category)) return false;
-
-      // Selected Payment Modes
-      if (filters.paymentModes.length > 0 && !filters.paymentModes.includes(t.paymentMode)) return false;
-
-      // Min/Max Amounts
-      if (filters.minAmount !== undefined && t.amount < filters.minAmount) return false;
-      if (filters.maxAmount !== undefined && t.amount > filters.maxAmount) return false;
-
-      return true;
-    });
-  }, [transactions, filters, dateRange]);
-
-  // Checkbox Selection Helpers
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedIds(filteredTransactions.map((t) => t.id).filter((id): id is string => !!id));
-    } else {
-      setSelectedIds([]);
-    }
+  // Any filter change invalidates the current page AND the current selection
+  const patchFilters = (patch: Partial<FilterState>) => {
+    setFilters((prev) => ({ ...prev, ...patch }));
+    setPage(1);
+    setSelectedIds([]);
   };
 
-  const handleSelectRow = (id: string, checked: boolean) => {
-    if (checked) {
-      setSelectedIds((prev) => [...prev, id]);
-    } else {
-      setSelectedIds((prev) => prev.filter((item) => item !== id));
-    }
+  const goToPage = (p: number) => {
+    setPage(p);
+    setSelectedIds([]);
   };
 
-  // Trigger editing modal (enabled when exactly 1 item is selected)
-  const handleEditClick = () => {
-    if (selectedIds.length === 1) {
-      setEditingId(selectedIds[0]);
-      setIsEditDialogOpen(true);
-    }
+const toggleArrayFilter = (key: 'categories' | 'types' | 'paymentModes', value: string) => {
+  const arr = filters[key] as string[];
+  patchFilters({
+    [key]: arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value],
+  } as Partial<FilterState>);
+};
+  const handleBulkDelete = async () => {
+    if (!confirm(`Delete ${selectedIds.length} transaction(s)?`)) return;
+    await deleteTransactions(selectedIds);   // ONE request, not N
+    setSelectedIds([]);
   };
 
-  const handleBulkDelete = () => {
-    if (confirm(`Are you sure you want to delete ${selectedIds.length} transaction(s)?`)) {
-      selectedIds.forEach((id) => deleteTransaction(id));
-      setSelectedIds([]);
-    }
-  };
-
-  const toggleArrayFilter = <K extends keyof FilterState>(
-    key: K,
-    value: string
-  ) => {
-    setFilters((prev) => {
-      const currentArr = (prev[key] as string[]) || [];
-      const updatedArr = currentArr.includes(value)
-        ? currentArr.filter((item) => item !== value)
-        : [...currentArr, value];
-      return { ...prev, [key]: updatedArr };
-    });
-  };
+  const allSelected = transactions.length > 0 && selectedIds.length === transactions.length;
+  const handleSelectAll = (checked: boolean) =>
+    setSelectedIds(checked ? transactions.map((t) => t.id) : []);
+  const handleSelectRow = (id: string, checked: boolean) =>
+    setSelectedIds((prev) => (checked ? [...prev, id] : prev.filter((x) => x !== id)));
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-full items-start">
-      
-      {/* LEFT CONTENT AREA */}
+      {/* LEFT: toolbar + table + pagination */}
       <div className="flex-1 w-full space-y-4">
-        
-        {/* Toolbar */}
         <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-white p-4 rounded-xl border shadow-sm">
           <div className="relative w-full sm:w-72">
             <Input
               placeholder="Search description or category..."
               value={filters.search}
-              onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+              onChange={(e) => patchFilters({ search: e.target.value })}
             />
           </div>
 
           <div className="flex gap-2 items-center w-full sm:w-auto justify-end">
             {selectedIds.length > 0 && (
               <div className="flex gap-2 mr-2">
-                {/* 
-                  Edit button is enabled only when exactly one item is checked.
-                  It triggers handleEditClick.
-                */}
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-1"
+                <Button
+                  variant="outline" size="sm" className="gap-1"
                   disabled={selectedIds.length !== 1}
-                  onClick={handleEditClick}
+                  onClick={() => setEditingId(selectedIds[0])}
                 >
                   <Edit className="h-4 w-4" />
-                  Edit ({selectedIds.length})
+                  Edit
                 </Button>
                 <Button variant="destructive" size="sm" className="gap-1" onClick={handleBulkDelete}>
                   <Trash2 className="h-4 w-4" />
@@ -156,25 +105,16 @@ export default function Transactions() {
                 </Button>
               </div>
             )}
-            
-            {/* Create mode dialog (uncontrolled trigger) */}
             <AddTransactionDialog />
           </div>
         </div>
 
-        {/* Data Table */}
         <div className="bg-white rounded-xl border shadow-sm overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">
-                  <Checkbox
-                    checked={
-                      filteredTransactions.length > 0 &&
-                      selectedIds.length === filteredTransactions.length
-                    }
-                    onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                  />
+                  <Checkbox checked={allSelected} onCheckedChange={(c) => handleSelectAll(!!c)} />
                 </TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Date</TableHead>
@@ -184,27 +124,29 @@ export default function Transactions() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTransactions.length === 0 ? (
+              {loading ? (
                 <TableRow>
                   <TableCell colSpan={6} className="h-36 text-center text-slate-400">
-                    No transactions found matches your active filters.
+                    Loading…
+                  </TableCell>
+                </TableRow>
+              ) : transactions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-36 text-center text-slate-400">
+                    No transactions match your active filters.
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredTransactions.map((tx) => (
+                transactions.map((tx) => (
                   <TableRow key={tx.id}>
                     <TableCell>
                       <Checkbox
-                        checked={selectedIds.includes(tx.id || '')}
-                        onCheckedChange={(checked) => handleSelectRow(tx.id || '', !!checked)}
+                        checked={selectedIds.includes(tx.id)}
+                        onCheckedChange={(c) => handleSelectRow(tx.id, !!c)}
                       />
                     </TableCell>
                     <TableCell className="font-medium text-slate-800">{tx.category}</TableCell>
-                    <TableCell className="text-slate-500">
-                      {tx.date instanceof Date 
-                        ? tx.date.toLocaleDateString() 
-                        : new Date(tx.date).toLocaleDateString()}
-                    </TableCell>
+                    <TableCell className="text-slate-500">{tx.date.toLocaleDateString()}</TableCell>
                     <TableCell className="text-slate-500">{tx.paymentMode}</TableCell>
                     <TableCell className="text-slate-600 max-w-xs truncate">{tx.description}</TableCell>
                     <TableCell className={`text-right font-semibold ${
@@ -218,42 +160,50 @@ export default function Transactions() {
             </TableBody>
           </Table>
         </div>
+
+        {/* Server-side pagination — the DB counts, the UI just navigates */}
+        <div className="flex items-center justify-between bg-white p-3 rounded-xl border shadow-sm text-sm text-slate-500">
+          <span>{total} transaction(s) · page {page} of {totalPages}</span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => goToPage(page - 1)}>
+              <ChevronLeft className="h-4 w-4" /> Prev
+            </Button>
+            <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => goToPage(page + 1)}>
+              Next <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* RIGHT SIDE FILTER PANEL */}
+      {/* RIGHT: filter panel — options now come from the DB via useLookups */}
       <aside className="w-full lg:w-80 bg-white rounded-xl border shadow-sm p-5 space-y-6 shrink-0 lg:sticky lg:top-4">
         <h3 className="text-sm font-semibold text-slate-900 pb-2 border-b">Filters</h3>
 
         <div className="space-y-2">
           <label className="text-xs font-semibold text-slate-500">Cashflow</label>
           <div className="flex gap-4">
-            <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
-              <Checkbox
-                checked={filters.types.includes('income')}
-                onCheckedChange={() => toggleArrayFilter('types', 'income')}
-              />
-              Income
-            </label>
-            <label className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
-              <Checkbox
-                checked={filters.types.includes('expense')}
-                onCheckedChange={() => toggleArrayFilter('types', 'expense')}
-              />
-              Expense
-            </label>
+            {(['income', 'expense'] as const).map((t) => (
+              <label key={t} className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                <Checkbox
+                  checked={filters.types.includes(t)}
+                  onCheckedChange={() => toggleArrayFilter('types', t)}
+                />
+                {t[0].toUpperCase() + t.slice(1)}
+              </label>
+            ))}
           </div>
         </div>
 
         <div className="space-y-2">
           <label className="text-xs font-semibold text-slate-500">Categories</label>
           <div className="max-h-40 overflow-y-auto space-y-2 pr-1">
-            {CATEGORIES.map((cat) => (
-              <label key={cat} className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+            {categories.map((c) => (
+              <label key={c.id} className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
                 <Checkbox
-                  checked={filters.categories.includes(cat)}
-                  onCheckedChange={() => toggleArrayFilter('categories', cat)}
+                  checked={filters.categories.includes(c.name)}
+                  onCheckedChange={() => toggleArrayFilter('categories', c.name)}
                 />
-                {cat}
+                {c.name}
               </label>
             ))}
           </div>
@@ -262,60 +212,46 @@ export default function Transactions() {
         <div className="space-y-2">
           <label className="text-xs font-semibold text-slate-500">Payment Modes</label>
           <div className="space-y-2">
-            {PAYMENT_MODES.map((mode) => (
-              <label key={mode} className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+            {paymentModes.map((m) => (
+              <label key={m.id} className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
                 <Checkbox
-                  checked={filters.paymentModes.includes(mode)}
-                  onCheckedChange={() => toggleArrayFilter('paymentModes', mode)}
+                  checked={filters.paymentModes.includes(m.name)}
+                  onCheckedChange={() => toggleArrayFilter('paymentModes', m.name)}
                 />
-                {mode}
+                {m.name}
               </label>
             ))}
           </div>
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-slate-500 font-medium">Amount Range</label>
+          <label className="text-xs font-semibold text-slate-500">Amount Range</label>
           <div className="flex gap-2 items-center">
             <Input
-              type="number"
-              placeholder="Min"
+              type="number" placeholder="Min"
               value={filters.minAmount ?? ''}
               onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  minAmount: e.target.value === '' ? undefined : Number(e.target.value),
-                }))
+                patchFilters({ minAmount: e.target.value === '' ? undefined : Number(e.target.value) })
               }
             />
             <span className="text-slate-400 text-sm">-</span>
             <Input
-              type="number"
-              placeholder="Max"
+              type="number" placeholder="Max"
               value={filters.maxAmount ?? ''}
               onChange={(e) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  maxAmount: e.target.value === '' ? undefined : Number(e.target.value),
-                }))
+                patchFilters({ maxAmount: e.target.value === '' ? undefined : Number(e.target.value) })
               }
             />
           </div>
         </div>
       </aside>
 
-      {/* 
-        This is the controlled edit dialog. 
-        It renders with no trigger, opening programmatically when editingId is set.
-      */}
+      {/* Controlled edit dialog (opens when exactly one row is selected) */}
       {editingId && (
         <AddTransactionDialog
           transactionId={editingId}
-          open={isEditDialogOpen}
-          onOpenChange={(isOpen) => {
-            setIsEditDialogOpen(isOpen);
-            if (!isOpen) setEditingId(null);
-          }}
+          open={true}
+          onOpenChange={(isOpen) => { if (!isOpen) setEditingId(null); }}
         />
       )}
     </div>

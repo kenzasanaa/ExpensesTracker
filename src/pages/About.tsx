@@ -14,7 +14,7 @@ export default function About() {
       
       {/* Hero Card */}
       <Card className="border shadow-sm overflow-hidden rounded-2xl">
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white flex flex-col md:flex-row items-center gap-6 justify-between">
+        <div className="bg-linear-to-r from-blue-600 to-indigo-600 p-8 text-white flex flex-col md:flex-row items-center gap-6 justify-between">
           <div className="space-y-3 max-w-lg">
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Expense Tracker</h1>
             <p className="text-blue-100 text-sm md:text-base leading-relaxed">

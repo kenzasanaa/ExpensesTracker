@@ -1,4 +1,5 @@
 import { z } from 'zod';
+export type TransactionInput = TransactionFormData;
 
 // 1. Define reusable constants
 export const CATEGORIES = [
@@ -68,7 +69,7 @@ export const transactionSchema = z.object({
 });
 
 // 3. Derive the TypeScript type automatically
-export type Transaction = z.infer<typeof transactionSchema>;
+export type Transaction = Omit<z.infer<typeof transactionSchema>, 'id'> & { id: string };
 
 // 4. NOW derive the form schema (after transactionSchema is declared)
 //export const transactionFormSchema = transactionSchema.omit({ id: true });
